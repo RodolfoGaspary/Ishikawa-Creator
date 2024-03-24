@@ -73,21 +73,6 @@
   .sub-branch button.delete:hover {
     background-color: #d32f2f;
   }
-  .sub-branch {
-  display: flex; /* Add display flex */
-  align-items: center; /* Align items vertically */
-  }
-
-.sub-branch input[type="text"] {
-  flex: 1; /* Let the input field take remaining space */
-  margin-right: 10px;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  overflow: hidden; /* Hide overflow text */
-  text-overflow: ellipsis; /* Add ellipsis for overflow text */
-  white-space: nowrap; /* Prevent wrapping */
-  }
 </style>
 </head>
 <body>
@@ -254,7 +239,54 @@
 
   // Call the function to add predetermined sub-branches
   addSubBranches();
-  
+
+  // Store original widths of input fields
+  var originalWidths = {};
+
+  // Adjust width of all text input fields based on their content
+  function adjustWidthForAll() {
+    var allTextInputs = document.querySelectorAll('input[type="text"]');
+    allTextInputs.forEach(function(input) {
+      adjustWidth(input);
+    });
+  }
+
+  // Adjust width of a single text input field based on its content
+  function adjustWidth(inputField) {
+    var text = inputField.value;
+    var tempSpan = document.createElement('span');
+    tempSpan.textContent = text || ' '; // Ensure there's at least one character for accurate measurement
+    tempSpan.style.visibility = 'hidden';
+    tempSpan.style.whiteSpace = 'nowrap';
+    document.body.appendChild(tempSpan);
+
+    if (!(inputField.id in originalWidths)) {
+      originalWidths[inputField.id] = inputField.offsetWidth;
+    }
+
+    var width = tempSpan.offsetWidth + 75;
+
+    // Adjust width based on content length
+    if (text.length > 0 && width > originalWidths[inputField.id]) {
+      inputField.style.width = (width + 20) + 'px'; // Add some padding
+    } else {
+      inputField.style.width = originalWidths[inputField.id] + 'px'; // Restore original width
+    }
+
+    document.body.removeChild(tempSpan);
+  }
+
+  // Call adjustWidthForAll initially and whenever a key is pressed in any text input field
+  window.addEventListener('resize', adjustWidthForAll);
+  window.addEventListener('input', function(event) {
+    if (event.target && event.target.matches('input[type="text"]')) {
+      adjustWidth(event.target);
+    }
+  });
+  adjustWidthForAll(); // Call initially
+
+
+
 </script>
 </body>
 </html>
