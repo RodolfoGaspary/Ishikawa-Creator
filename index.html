@@ -73,6 +73,21 @@
   .sub-branch button.delete:hover {
     background-color: #d32f2f;
   }
+  .sub-branch {
+  display: flex; /* Add display flex */
+  align-items: center; /* Align items vertically */
+  }
+
+.sub-branch input[type="text"] {
+  flex: 1; /* Let the input field take remaining space */
+  margin-right: 10px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  overflow: hidden; /* Hide overflow text */
+  text-overflow: ellipsis; /* Add ellipsis for overflow text */
+  white-space: nowrap; /* Prevent wrapping */
+  }
 </style>
 </head>
 <body>
