@@ -84,7 +84,6 @@
     background-color: #ffffff;
     font-size: 12px;
     font-weight: normal;
-    text-align: left;
   }
 
   .sub-branch button {
@@ -225,38 +224,42 @@
     var subBranchesContainer = document.querySelector('.sub-branches');
     mainProblemInput.value = array[0];
     subBranchesContainer.innerHTML = '';
-    displaySubBranches(array[1], subBranchesContainer);
+    displaySubBranches(array[1], subBranchesContainer, true);
   }
 
-  function displaySubBranches(subBranches, container) {
-    subBranches.forEach(function(branch) {
-      var subBranchContainer = document.createElement('div');
-      subBranchContainer.classList.add('sub-branch');
+  function displaySubBranches(subBranches, container, isMainBranch) {
+    subBranches.forEach(function(branch, index) {
+        var subBranchContainer = document.createElement('div');
+        if (isMainBranch && index < 6) {
+            subBranchContainer.classList.add('sub-main'); // First six main branches should have class 'sub-main'
+        } else {
+            subBranchContainer.classList.add('sub-branch'); // Subsequent branches should have class 'sub-branch'
+        }
 
-      var inputField = document.createElement('input');
-      inputField.type = 'text';
-      inputField.value = branch[0];
+        var inputField = document.createElement('input');
+        inputField.type = 'text';
+        inputField.value = branch[0];
 
-      var addButton = document.createElement('button');
-      addButton.textContent = '+';
-      addButton.onclick = function() {
-        addSubBranch(this);
-      };
+        var addButton = document.createElement('button');
+        addButton.textContent = '+';
+        addButton.onclick = function() {
+            addSubBranch(this);
+        };
 
-      var deleteButton = document.createElement('button');
-      deleteButton.textContent = 'X';
-      deleteButton.onclick = function() {
-        deleteBranch(this);
-      };
+        var deleteButton = document.createElement('button');
+        deleteButton.textContent = 'X';
+        deleteButton.onclick = function() {
+            deleteBranch(this);
+        };
 
-      subBranchContainer.appendChild(inputField);
-      subBranchContainer.appendChild(addButton);
-      subBranchContainer.appendChild(deleteButton);
-      container.appendChild(subBranchContainer);
+        subBranchContainer.appendChild(inputField);
+        subBranchContainer.appendChild(addButton);
+        subBranchContainer.appendChild(deleteButton);
+        container.appendChild(subBranchContainer);
 
-      if (branch[1].length > 0) {
-        displaySubBranches(branch[1], subBranchContainer);
-      }
+        if (branch[1].length > 0) {
+            displaySubBranches(branch[1], subBranchContainer, false); // Pass false for nested branches
+        }
     });
   }
 
@@ -287,7 +290,7 @@
       originalWidths[inputField.id] = inputField.offsetWidth-135;
     }
 
-    var width = tempSpan.offsetWidth;
+    var width = tempSpan.offsetWidth + 50;
 
     // Adjust width based on content length
     if (text.length > 0 && width > originalWidths[inputField.id]) {
