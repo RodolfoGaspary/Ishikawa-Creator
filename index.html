@@ -83,6 +83,7 @@
     background-color: #ffffff;
     font-size: 12px;
     font-weight: normal;
+    text-align: left;
   }
 
   .sub-branch button {
@@ -140,6 +141,7 @@
       subBranch.classList.add('sub-branch');
 
       var inputField = document.createElement('input');
+      inputField.classList.add('sub-input');
       inputField.type = 'text';
       inputField.placeholder = 'Sub-Branch';
 
@@ -236,6 +238,7 @@
         }
 
         var inputField = document.createElement('input');
+        inputField.classList.add('sub-input')
         inputField.type = 'text';
         inputField.value = branch[0];
 
@@ -286,14 +289,18 @@
     document.body.appendChild(tempSpan);
 
     if (!(inputField.id in originalWidths)) {
-      originalWidths[inputField.id] = inputField.offsetWidth-135;
+      originalWidths[inputField.id] = inputField.offsetWidth - 300;
     }
 
     var width = tempSpan.offsetWidth + 50;
 
     // Adjust width based on content length
-    if (text.length > 0 && width > originalWidths[inputField.id]) {
-      inputField.style.width = (width) + 30 + 'px'; // Add some padding
+    if (text.length > 0 && width > originalWidths[inputField.id] + 300) {
+      if (inputField.className === 'sub-input') {
+        inputField.style.width = (width - 100) + 'px'; // Add some padding
+      } else {
+        inputField.style.width = (width) + 30 + 'px'; // Add some padding
+      }
     } else {
       inputField.style.width = originalWidths[inputField.id] + 'px'; // Restore original width
     }
