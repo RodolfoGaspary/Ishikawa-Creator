@@ -5,320 +5,517 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ishikawa Maker</title>
 <style>
-  body {
-    font-family: Arial, sans-serif;
-    background-color: #f2f2f2;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
+  :root {
+    --bg: #f4f6f8;
+    --panel: #ffffff;
+    --line: #c9d2dc;
+    --spine: #4b5563;
+    --accent: #4CAF50;
+    --accent-hover: #429a46;
+    --danger: #e74c3c;
+    --danger-hover: #c0392b;
+    --main-bg: #b7f3a8;
+    --branch-bg: #83b3fa;
+    --sub-bg: #ffffff;
+    --text: #1f2933;
+    --muted: #6b7280;
   }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 24px;
+    min-height: 100vh;
+  }
+
+  .toolbar {
+    max-width: 1600px;
+    margin: 0 auto 16px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .toolbar button, .toolbar label {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--text);
+    padding: 8px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.15s ease;
+  }
+  .toolbar button:hover, .toolbar label:hover {
+    background: #eef2f6;
+    border-color: #a9b4c0;
+  }
+  .toolbar .spacer { flex: 1; }
+  .toolbar input[type="file"] { display: none; }
 
   #diagram {
-    background-color: #fff;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    padding: 20px;
-    width: 100%;
+    background: var(--panel);
+    border-radius: 14px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+    padding: 28px;
+    max-width: 1600px;
+    margin: 0 auto;
+    overflow: auto;
+  }
+  #diagram-root {
+    min-width: max-content;
   }
 
-  .main-problem input[type="text"]{
-    margin-bottom: 20px;
-    padding: 5px;
-    background-color: #b7f3a8;
+  /* Shared textarea reset — auto-grow vertically, no resize handle */
+  textarea {
+    font-family: inherit;
+    line-height: 1.35;
+    resize: none;
+    overflow: hidden;
+    box-sizing: border-box;
+    display: block;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+
+  /* Main problem */
+  .main-problem textarea {
+    padding: 12px 18px;
+    background: var(--main-bg);
     font-size: 20px;
-    font-weight: bold;
+    font-weight: 700;
     text-align: center;
-    border-radius: 12px;
+    border: none;
+    border-radius: 10px;
+    width: 280px;
+    outline: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
   }
 
-  .main-problem{
+  /* Inputs and buttons */
+  .row {
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  .row textarea {
+    padding: 6px 10px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    font-size: 14px;
+    outline: none;
+    width: 150px;
+    transition: border-color 0.15s;
+  }
+  .row textarea:focus { border-color: #4a90e2; }
+
+  .sub-main > .row > textarea {
+    background: var(--branch-bg);
+    color: #fff;
+    font-weight: 600;
+    font-size: 15px;
+    width: 170px;
     text-align: center;
+    border-color: transparent;
+  }
+  .sub-main > .row > textarea::placeholder { color: #eaf1ff; }
+  .sub-branch > .row > textarea { background: var(--sub-bg); }
+
+  .icon-btn {
+    width: 24px; height: 24px;
+    padding: 0;
+    border-radius: 50%;
+    border: none;
+    color: #fff;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s, transform 0.1s;
+    flex-shrink: 0;
+  }
+  .icon-btn:hover { transform: scale(1.08); }
+  .icon-btn.add { background: var(--accent); }
+  .icon-btn.add:hover { background: var(--accent-hover); }
+  .icon-btn.del { background: var(--danger); }
+  .icon-btn.del:hover { background: var(--danger-hover); }
+
+  .hint { color: var(--muted); font-size: 12px; }
+
+  /* ============================================================
+     LAYOUT — root grid
+     ============================================================ */
+  #diagram-root {
+    display: grid;
+    gap: 0;
   }
 
-  .sub-branches {
+  /* ===== VERTICAL: problem on TOP, spine drops down from it ===== */
+  .vertical #diagram-root {
+    grid-template-columns: 1fr auto 1fr;
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      "side-a  problem  side-b"
+      "side-a  spine    side-b";
+    align-items: stretch;
+    min-height: 70vh;
+  }
+  .vertical .side-a       { grid-area: side-a; }
+  .vertical .spine        { grid-area: spine; }
+  .vertical .side-b       { grid-area: side-b; }
+  .vertical .main-problem { grid-area: problem; justify-self: center; }
+  .vertical .side {
     display: flex;
     flex-direction: column;
+    justify-content: center;
+    gap: 28px;
   }
+  .vertical .side-a { align-items: flex-end; }
+  .vertical .side-b { align-items: flex-start; }
 
-  .sub-main {
-    margin-bottom: 10px;
+  .vertical .spine {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: stretch;
   }
-
-  .sub-main input[type="text"] {
+  .vertical .spine-line {
+    width: 3px;
+    background: var(--spine);
     flex: 1;
-    margin-right: 10px;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    background-color: #83b3fa;
-    font-size: 16px;
-    font-weight: bold;
-    text-align: center;
+    border-radius: 2px;
   }
 
-  .sub-main button {
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    padding: 8px 12px;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
+  /* Branches grow outward away from spine */
+  .vertical .side-a .sub-main,
+  .vertical .side-a .sub-branch {
+    display: flex; flex-direction: row-reverse; align-items: flex-start; gap: 2px;
+  }
+  .vertical .side-b .sub-main,
+  .vertical .side-b .sub-branch {
+    display: flex; flex-direction: row; align-items: flex-start; gap: 2px;
+  }
+  .vertical .side .children {
+    display: flex; flex-direction: column; gap: 6px;
+    padding-top: 4px;
+  }
+  .vertical .side-a .children { align-items: flex-end; }
+  .vertical .side-b .children { align-items: flex-start; }
+
+  /* On the LEFT side, mirror the row so +/× buttons sit on the left of the input */
+  .vertical .side-a .row { flex-direction: row-reverse; }
+
+  /* Connector ribs (small horizontal line between main category and spine) */
+  .vertical .side-a .sub-main::before,
+  .vertical .side-b .sub-main::before {
+    content: "";
+    align-self: center;
+    width: 8px;
+    height: 2px;
+    background: var(--line);
+    order: -1;
   }
 
-  .sub-branch {
-    margin-bottom: 10px;
-    margin-left: 200px;
+  /* ===== HORIZONTAL: spine horizontal, problem pinned to the right ===== */
+  .horizontal #diagram-root {
+    grid-template-columns: 1fr auto;
+    grid-template-rows: 1fr auto 1fr;
+    grid-template-areas:
+      "side-a   problem"
+      "spine    problem"
+      "side-b   problem";
+    align-items: stretch;
+    min-height: 75vh;
   }
+  .horizontal .side-a       { grid-area: side-a; }
+  .horizontal .spine        { grid-area: spine; }
+  .horizontal .side-b       { grid-area: side-b; }
+  .horizontal .main-problem { grid-area: problem; align-self: center; padding-left: 4px; }
 
-  .sub-branch input[type="text"] {
+  /* Each main category gets its own equal grid column so its rib stays at the
+     same x-position regardless of how many sub-branches it has. Columns expand
+     to fit their content (max-content) so deep trees never get clipped — the
+     #diagram container then scrolls horizontally as needed. */
+  .horizontal .side {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(180px, max-content);
+    justify-content: space-around;
+    gap: 16px;
+    padding: 0 12px;
+  }
+  .horizontal .side-a { align-items: end; }
+  .horizontal .side-b { align-items: start; }
+
+  .horizontal .spine {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: stretch;
+  }
+  .horizontal .spine-line {
+    height: 3px;
+    background: var(--spine);
     flex: 1;
-    margin-right: 10px;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    background-color: #ffffff;
-    font-size: 12px;
-    font-weight: normal;
-    text-align: left;
+    border-radius: 2px;
   }
 
-  .sub-branch button {
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    padding: 8px 12px;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
+  /* Each .sub-main fills its grid column and centers its contents.
+     The rib + category label sit on the column's center axis, so the
+     spine connection point stays put regardless of how wide the
+     sub-branch tree gets. */
+  .horizontal .side .sub-main {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    width: 100%;
+    min-width: 0;
   }
+  .horizontal .side .sub-main > .children {
+    width: 100%;
+  }
+  .horizontal .side-a .sub-main::after,
+  .horizontal .side-b .sub-main::after {
+    content: "";
+    width: 2px;
+    height: 14px;
+    background: var(--line);
+  }
+  /* Top side (above spine): from top to bottom = sub-branches, category, rib */
+  .horizontal .side-a .sub-main > .children { order: 1; }
+  .horizontal .side-a .sub-main > .row      { order: 2; }
+  .horizontal .side-a .sub-main::after      { order: 3; }
+  /* Bottom side: from top to bottom = rib, category, sub-branches */
+  .horizontal .side-b .sub-main::after      { order: 1; }
+  .horizontal .side-b .sub-main > .row      { order: 2; }
+  .horizontal .side-b .sub-main > .children { order: 3; }
 
+
+  /* Sub-branches under a main category are CENTERED under the category label,
+     so they line up with it instead of drifting toward one side of the column. */
+  .horizontal .side .sub-main > .children {
+    display: flex; flex-direction: column; gap: 4px; align-items: center;
+  }
+  /* TOP side mirrors the BOTTOM: nested sub-branches stack ABOVE their parent
+     (column-reverse), so the top half visually grows upward and the bottom
+     half grows downward — together forming the fish-spine silhouette. */
+  .horizontal .side-a .sub-branch {
+    flex-direction: column-reverse;
+  }
+  /* Nested sub-branches sit BELOW their parent and indented to the LEFT.
+     +/× buttons stay on the left of the input (away from the main problem). */
+  .horizontal .side .sub-branch {
+    display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
+  }
+  .horizontal .side .sub-branch > .row {
+    flex-direction: row-reverse;
+  }
+  .horizontal .side .sub-branch > .children {
+    display: flex; flex-direction: column; gap: 4px;
+    align-items: flex-end;
+    margin-right: 20px;
+    padding: 2px 6px 2px 0;
+    border-right: 2px solid var(--line);
+  }
+  .horizontal .side .sub-branch > .children:empty {
+    border-right: none;
+    padding: 0;
+    margin: 0;
+  }
 </style>
 </head>
-<body>
+<body class="vertical">
+
+<div class="toolbar">
+  <button id="orientationBtn" onclick="toggleOrientation()">⇄ Switch to Horizontal</button>
+  <button onclick="exportArray()">⬇ Export JSON</button>
+  <label for="fileInput">⬆ Import JSON</label>
+  <input type="file" id="fileInput" accept="application/json" onchange="importArray(event)">
+  <button onclick="resetDiagram()">↺ Reset</button>
+  <span class="spacer"></span>
+  <span class="hint">Click + to add a sub-branch, × to remove</span>
+</div>
 
 <div id="diagram">
-  <div class="main-problem">
-    <input type="text" placeholder="Main Problem">
-    <div class="sub-branches"></div>
+  <div id="diagram-root">
+    <div class="side side-a"></div>
+    <div class="spine">
+      <div class="spine-line"></div>
+    </div>
+    <div class="main-problem">
+      <textarea rows="1" placeholder="Main Problem"></textarea>
+    </div>
+    <div class="side side-b"></div>
   </div>
-  <button onclick="exportArray()">Export to JSON</button>
-  <input type="file" id="fileInput" onchange="importArray(event)">
 </div>
 
 <script>
-  function addSubBranches() {
-    var subBranchesContainer = document.querySelector('.sub-branches');
-    var subBranches = ['Man', 'Machine', 'Environment', 'Material', 'Method', 'Measure'];
+  const DEFAULT_BRANCHES = ['Man', 'Machine', 'Environment', 'Material', 'Method', 'Measure'];
+  const MAX_CHILDREN = 8;
 
-    subBranches.forEach(function(branch) {
-      var subBranchContainer = document.createElement('div');
-      subBranchContainer.classList.add('sub-main');
+  function el(tag, cls) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    return e;
+  }
 
-      var inputField = document.createElement('input');
-      inputField.type = 'text';
-      inputField.value = branch;
+  function autoResize(ta) {
+    ta.style.height = 'auto';
+    ta.style.height = ta.scrollHeight + 'px';
+  }
 
-      var addButton = document.createElement('button');
-      addButton.textContent = '+';
-      addButton.onclick = function() {
-        addSubBranch(this);
-      };
+  function makeRow(value, placeholder, isMain) {
+    const row = el('div', 'row');
+    const input = el('textarea');
+    input.rows = 1;
+    if (value != null) input.value = value;
+    if (placeholder) input.placeholder = placeholder;
+    input.addEventListener('input', () => autoResize(input));
+    requestAnimationFrame(() => autoResize(input));
 
-      subBranchContainer.appendChild(inputField);
-      subBranchContainer.appendChild(addButton);
-      subBranchesContainer.appendChild(subBranchContainer);
-    });
+    const addBtn = el('button', 'icon-btn add');
+    addBtn.textContent = '+';
+    addBtn.title = 'Add sub-branch';
+    addBtn.onclick = function() { addSubBranch(this); };
+
+    row.appendChild(input);
+    row.appendChild(addBtn);
+
+    if (!isMain) {
+      const delBtn = el('button', 'icon-btn del');
+      delBtn.textContent = '×';
+      delBtn.title = 'Remove';
+      delBtn.onclick = function() { deleteBranch(this); };
+      row.appendChild(delBtn);
+    }
+    return row;
+  }
+
+  function makeMainBranch(name) {
+    const wrap = el('div', 'sub-main');
+    wrap.appendChild(makeRow(name, 'Category', true));
+    wrap.appendChild(el('div', 'children'));
+    return wrap;
+  }
+
+  function makeSubBranch(name) {
+    const wrap = el('div', 'sub-branch');
+    wrap.appendChild(makeRow(name, 'Cause / idea', false));
+    wrap.appendChild(el('div', 'children'));
+    return wrap;
   }
 
   function addSubBranch(button) {
-    var subBranches = button.parentElement.getElementsByClassName('sub-branch');
-    if (subBranches.length < 8) {
-      var subBranch = document.createElement('div');
-      subBranch.classList.add('sub-branch');
-
-      var inputField = document.createElement('input');
-      inputField.classList.add('sub-input');
-      inputField.type = 'text';
-      inputField.placeholder = 'Sub-Branch';
-
-      var addButton = document.createElement('button');
-      addButton.textContent = '+';
-      addButton.onclick = function() {
-        addSubBranch(this);
-      };
-
-      var deleteButton = document.createElement('button');
-      deleteButton.textContent = 'X';
-      deleteButton.onclick = function() {
-        deleteBranch(this);
-      };
-
-      subBranch.appendChild(inputField);
-      subBranch.appendChild(addButton);
-      subBranch.appendChild(deleteButton);
-      button.parentElement.appendChild(subBranch);
-    } else {
-      alert('You can only add up to 8 sub-branches.');
+    const branchWrap = button.closest('.sub-main, .sub-branch');
+    const children = branchWrap.querySelector(':scope > .children');
+    if (children.children.length >= MAX_CHILDREN) {
+      alert('You can only add up to ' + MAX_CHILDREN + ' sub-branches here.');
+      return;
     }
+    const sub = makeSubBranch('');
+    children.appendChild(sub);
+    sub.querySelector('textarea').focus();
   }
 
   function deleteBranch(button) {
-    var subBranchContainer = button.parentElement;
-    subBranchContainer.remove();
+    button.closest('.sub-branch, .sub-main').remove();
+  }
+
+  function initDefaults() {
+    const a = document.querySelector('.side-a');
+    const b = document.querySelector('.side-b');
+    a.innerHTML = '';
+    b.innerHTML = '';
+    DEFAULT_BRANCHES.forEach((name, i) => {
+      const target = i < 3 ? a : b;
+      target.appendChild(makeMainBranch(name));
+    });
+  }
+
+  function resetDiagram() {
+    if (!confirm('Clear the diagram and reset to defaults?')) return;
+    document.querySelector('.main-problem textarea').value = '';
+    initDefaults();
+  }
+
+  function toggleOrientation() {
+    const body = document.body;
+    const btn = document.getElementById('orientationBtn');
+    if (body.classList.contains('vertical')) {
+      body.classList.replace('vertical', 'horizontal');
+      btn.textContent = '⇅ Switch to Vertical';
+    } else {
+      body.classList.replace('horizontal', 'vertical');
+      btn.textContent = '⇄ Switch to Horizontal';
+    }
+  }
+
+  // ===== JSON I/O =====
+  function serializeBranch(wrap) {
+    const name = wrap.querySelector(':scope > .row > textarea').value;
+    const children = wrap.querySelector(':scope > .children');
+    const kids = Array.from(children.children).map(serializeBranch);
+    return [name, kids];
   }
 
   function exportArray() {
-    var mainProblem = document.querySelector('.main-problem input').value;
-    var subBranchesContainer = document.querySelector('.sub-branches');
-    var nestedArray = [mainProblem, []];
-
-    var mainBranches = subBranchesContainer.children;
-    for (var i = 0; i < mainBranches.length; i++) {
-        var mainBranch = mainBranches[i];
-        var mainBranchName = mainBranch.querySelector('input').value;
-        var subBranches = mainBranch.getElementsByClassName('sub-branch');
-        var subBranchArray = [];
-
-        for (var j = 0; j < subBranches.length; j++) {
-            var subBranch = subBranches[j];
-            var subBranchName = subBranch.querySelector('input').value;
-            subBranchArray.push([subBranchName, []]);
-        }
-
-        nestedArray[1].push([mainBranchName, subBranchArray]);
-    }
-
-    var json = JSON.stringify(nestedArray, null, 2);
-
-    var blob = new Blob([json], { type: "application/json" });
-    var url = URL.createObjectURL(blob);
-
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = mainProblem.replace(/\s/g, '_') + '.json'; // Replace spaces with underscores
-    a.click();
-
-    // Cleanup
+    const mainProblem = document.querySelector('.main-problem textarea').value;
+    const a = Array.from(document.querySelector('.side-a').children).map(serializeBranch);
+    const b = Array.from(document.querySelector('.side-b').children).map(serializeBranch);
+    const data = [mainProblem, [...a, ...b]];
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = (mainProblem.trim() || 'ishikawa').replace(/\s+/g, '_') + '.json';
+    link.click();
     URL.revokeObjectURL(url);
   }
 
   function importArray(event) {
-    var file = event.target.files[0];
-    var reader = new FileReader();
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
     reader.onload = function(e) {
       try {
-        var importedArray = JSON.parse(e.target.result);
-        displayArray(importedArray);
-      } catch (error) {
-        alert("Invalid JSON format!");
+        const data = JSON.parse(e.target.result);
+        renderFromArray(data);
+      } catch (err) {
+        alert('Invalid JSON file.');
       }
     };
     reader.readAsText(file);
+    event.target.value = '';
   }
 
-  function displayArray(array) {
-    var mainProblemInput = document.querySelector('.main-problem input');
-    var subBranchesContainer = document.querySelector('.sub-branches');
-    mainProblemInput.value = array[0];
-    subBranchesContainer.innerHTML = '';
-    displaySubBranches(array[1], subBranchesContainer, true);
+  function buildBranchFromArray(item, asMain) {
+    const [name, kids] = item;
+    const wrap = asMain ? makeMainBranch(name) : makeSubBranch(name);
+    const childrenContainer = wrap.querySelector(':scope > .children');
+    (kids || []).forEach(k => childrenContainer.appendChild(buildBranchFromArray(k, false)));
+    return wrap;
   }
 
-  function displaySubBranches(subBranches, container, isMainBranch) {
-    subBranches.forEach(function(branch, index) {
-        var subBranchContainer = document.createElement('div');
-        if (isMainBranch && index < 6) {
-            subBranchContainer.classList.add('sub-main'); // First six main branches should have class 'sub-main'
-        } else {
-            subBranchContainer.classList.add('sub-branch'); // Subsequent branches should have class 'sub-branch'
-        }
-
-        var inputField = document.createElement('input');
-        inputField.classList.add('sub-input')
-        inputField.type = 'text';
-        inputField.value = branch[0];
-
-        var addButton = document.createElement('button');
-        addButton.textContent = '+';
-        addButton.onclick = function() {
-            addSubBranch(this);
-        };
-
-        var deleteButton = document.createElement('button');
-        deleteButton.textContent = 'X';
-        deleteButton.onclick = function() {
-            deleteBranch(this);
-        };
-
-        subBranchContainer.appendChild(inputField);
-        subBranchContainer.appendChild(addButton);
-        subBranchContainer.appendChild(deleteButton);
-        container.appendChild(subBranchContainer);
-
-        if (branch[1].length > 0) {
-            displaySubBranches(branch[1], subBranchContainer, false); // Pass false for nested branches
-        }
+  function renderFromArray(data) {
+    document.querySelector('.main-problem textarea').value = data[0] || '';
+    const a = document.querySelector('.side-a');
+    const b = document.querySelector('.side-b');
+    a.innerHTML = '';
+    b.innerHTML = '';
+    const branches = data[1] || [];
+    const half = Math.ceil(branches.length / 2);
+    branches.forEach((branch, i) => {
+      const target = i < half ? a : b;
+      target.appendChild(buildBranchFromArray(branch, true));
     });
   }
 
-  // Call the function to add predetermined sub-branches
-  addSubBranches();
-
-  // Store original widths of input fields
-  var originalWidths = {};
-
-  // Adjust width of all text input fields based on their content
-  function adjustWidthForAll() {
-    var allTextInputs = document.querySelectorAll('input[type="text"]');
-    allTextInputs.forEach(function(input) {
-      adjustWidth(input);
-    });
-  }
-
-  // Adjust width of a single text input field based on its content
-  function adjustWidth(inputField) {
-    var text = inputField.value;
-    var tempSpan = document.createElement('span');
-    tempSpan.textContent = text || ' '; // Ensure there's at least one character for accurate measurement
-    tempSpan.style.visibility = 'hidden';
-    tempSpan.style.whiteSpace = 'nowrap';
-    document.body.appendChild(tempSpan);
-
-    if (!(inputField.id in originalWidths)) {
-      originalWidths[inputField.id] = inputField.offsetWidth - 300;
-    }
-
-    var width = tempSpan.offsetWidth + 50;
-
-    // Adjust width based on content length
-    if (text.length > 0 && width > originalWidths[inputField.id] + 300) {
-      if (inputField.className === 'sub-input') {
-        inputField.style.width = (width - 100) + 'px'; // Add some padding
-      } else {
-        inputField.style.width = (width) + 30 + 'px'; // Add some padding
-      }
-    } else {
-      inputField.style.width = originalWidths[inputField.id] + 'px'; // Restore original width
-    }
-
-    document.body.removeChild(tempSpan);
-  }
-
-  // Call adjustWidthForAll initially and whenever a key is pressed in any text input field
-  window.addEventListener('resize', adjustWidthForAll);
-  window.addEventListener('input', function(event) {
-    if (event.target && event.target.matches('input[type="text"]')) {
-      adjustWidth(event.target);
-    }
-  });
-  adjustWidthForAll(); // Call initially
-
-
-
+  initDefaults();
 </script>
 </body>
 </html>
